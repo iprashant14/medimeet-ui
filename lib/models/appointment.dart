@@ -5,7 +5,7 @@ class Appointment {
   final String? doctorName;
   final String? doctorSpecialty;
   final DateTime appointmentTime;
-  final String status;
+  final AppointmentStatus status;
 
   Appointment({
     this.id,
@@ -26,7 +26,7 @@ class Appointment {
       doctorName: json['doctorName'] as String?,
       doctorSpecialty: json['doctorSpecialty'] as String?,
       appointmentTime: DateTime.parse(json['appointmentTime'] as String),
-      status: json['status'] as String? ?? 'SCHEDULED',
+      status: _parseStatus(json['status'] as String? ?? 'SCHEDULED'),
     );
   }
 
@@ -38,7 +38,7 @@ class Appointment {
       'doctorName': doctorName,
       'doctorSpecialty': doctorSpecialty,
       'appointmentTime': appointmentTime.toIso8601String(),
-      'status': status,
+      'status': status.toString().split('.').last,
     };
     
     if (id != null) {
@@ -46,6 +46,20 @@ class Appointment {
     }
     
     return json;
+  }
+
+  // Helper method to parse status
+  static AppointmentStatus _parseStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'SCHEDULED':
+        return AppointmentStatus.scheduled;
+      case 'CANCELED':
+        return AppointmentStatus.canceled;
+      case 'COMPLETED':
+        return AppointmentStatus.completed;
+      default:
+        return AppointmentStatus.scheduled;
+    }
   }
 
   // Copy with
@@ -56,7 +70,7 @@ class Appointment {
     String? doctorName,
     String? doctorSpecialty,
     DateTime? appointmentTime,
-    String? status,
+    AppointmentStatus? status,
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -68,4 +82,10 @@ class Appointment {
       status: status ?? this.status,
     );
   }
+}
+
+enum AppointmentStatus {
+  scheduled,
+  canceled,
+  completed
 }

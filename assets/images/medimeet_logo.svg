@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="55" fill="#2196F3"/>
+  
+  <!-- Medical Cross -->
+  <rect x="45" y="30" width="30" height="60" fill="white" rx="4"/>
+  <rect x="30" y="45" width="60" height="30" fill="white" rx="4"/>
+  
+  <!-- Stethoscope -->
+  <path d="M35 75 Q45 85 60 85 Q75 85 85 75" stroke="white" stroke-width="6" fill="none"/>
+  <circle cx="35" cy="75" r="4" fill="white"/>
+  <circle cx="85" cy="75" r="4" fill="white"/>
+</svg>

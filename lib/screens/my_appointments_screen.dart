@@ -115,7 +115,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       setState(() {
         final index = appointments.indexWhere((a) => a.id == appointment.id);
         if (index != -1) {
-          appointments[index] = appointment.copyWith(status: 'CANCELLED');
+          appointments[index] = appointments[index].copyWith(status: AppointmentStatus.canceled);
         }
       });
       
@@ -306,11 +306,11 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
-                                                'Status: ${appointment.status}',
+                                                'Status: ${appointment.status.toString().split('.').last}',
                                                 style: TextStyle(
-                                                  color: appointment.status == 'CANCELLED'
+                                                  color: appointment.status == AppointmentStatus.canceled
                                                       ? Colors.red
-                                                      : appointment.status == 'SCHEDULED'
+                                                      : appointment.status == AppointmentStatus.scheduled
                                                           ? Colors.green
                                                           : Colors.black,
                                                   fontWeight: FontWeight.w500,
@@ -318,16 +318,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                               ),
                                             ],
                                           ),
-                                          trailing: appointment.status == 'SCHEDULED'
+                                          trailing: appointment.status == AppointmentStatus.scheduled
                                               ? TextButton(
                                                   onPressed: () => _cancelAppointment(appointment),
-                                                  child: const Text(
-                                                    'Cancel',
-                                                    style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
+                                                  child: const Text('Cancel'),
                                                 )
                                               : null,
                                         ),

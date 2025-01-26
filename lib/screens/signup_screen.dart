@@ -181,10 +181,19 @@ class SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.medical_services,
-                    size: 80,
-                    color: Colors.blue,
+                  Container(
+                    height: 120,
+                    width: 120,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    ),
+                    child: const Icon(
+                      Icons.local_hospital_rounded,
+                      size: 64,
+                      color: Colors.blue,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   const Text(
@@ -292,6 +301,49 @@ class SignupScreenState extends State<SignupScreen> {
                             'Create Account',
                             style: TextStyle(fontSize: 16),
                           ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'OR',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.g_mobiledata, size: 28),
+                    label: const Text('Sign up with Google'),
+                    onPressed: _isLoading ? null : () async {
+                      setState(() => _isLoading = true);
+                      try {
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        await authProvider.signInWithGoogle();
+                        if (mounted && authProvider.isAuthenticated) {
+                          Navigator.pushReplacementNamed(context, '/home');
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(e.toString()),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isLoading = false);
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(

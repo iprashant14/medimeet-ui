@@ -13,65 +13,97 @@ class AuthProvider with ChangeNotifier {
   bool _isAuthenticated = false;
   String? _userId;
   String? _username;
+  String? _email;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get userId => _userId;
   String? get username => _username;
+  String? get email => _email;
 
-  // Login method
+  // Common method to handle authentication response
+  Future<void> _handleAuthResponse(Map<String, dynamic> response) async {
+    final data = response;
+    final userId = data['userId']?.toString();
+    final username = data['username']?.toString();
+    final token = data['access_token']?.toString() ?? data['accessToken']?.toString();
+    final refreshToken = data['refresh_token']?.toString() ?? data['refreshToken']?.toString();
+
+    if (userId == null || token == null || refreshToken == null) {
+      throw AuthException(
+        message: 'Invalid authentication response from server',
+        code: 'invalid_response',
+      );
+    }
+
+    await _tokenService.saveTokens(token, refreshToken);
+
+    _isAuthenticated = true;
+    _userId = userId;
+    _username = username ?? 'User';
+    _email = data['email']?.toString();
+    notifyListeners();
+  }
+
+  // Login method for email/password
   Future<void> login(String email, String password) async {
     try {
       _logger.info('Attempting login for user: $email');
       final loginResponse = await _authService.login(email, password);
-
-      final userId = loginResponse['userId']?.toString();
-      final username = loginResponse['username']?.toString();
-      final accessToken = loginResponse['accessToken']?.toString();
-      final refreshToken = loginResponse['refreshToken']?.toString();
-
-      if (userId == null || accessToken == null || refreshToken == null) {
-        throw AuthException(
-          message: 'Invalid login response from server',
-          code: 'invalid_response',
-        );
-      }
-
-      await _tokenService.storeTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      );
-
-      _isAuthenticated = true;
-      _userId = userId;
-      _username = username ?? 'User'; // Use username from response or fallback to 'User'
+      await _handleAuthResponse(loginResponse);
       _logger.info('Login successful for user: $_username (ID: $_userId)');
       debugPrint('🔐 Login successful - User ID: $_userId, Token stored');
-      notifyListeners();
     } catch (e) {
       _logger.error('Login failed', e);
       _isAuthenticated = false;
       _userId = null;
       _username = null;
+      _email = null;
       rethrow;
     }
   }
 
-  // Logout method
-  Future<void> logout() async {
-    _logger.info('Logging out user: $_userId');
+  // Google Sign In method
+  Future<void> signInWithGoogle() async {
     try {
+      _logger.info('Attempting Google Sign In');
+      final googleResponse = await _authService.signInWithGoogle();
+      await _handleAuthResponse(googleResponse);
+      _logger.info('Google Sign In successful for user: $_username (ID: $_userId)');
+      debugPrint('🔐 Google Sign In successful - User ID: $_userId, Token stored');
+    } catch (e) {
+      _logger.error('Google Sign In failed', e);
+      _isAuthenticated = false;
+      _userId = null;
+      _username = null;
+      _email = null;
+      rethrow;
+    }
+  }
+
+  // Sign out method (handles both normal and Google sign out)
+  Future<void> logout() async {
+    try {
+      _logger.info('Logging out user: $_username');
+      
+      // If user was signed in with Google, sign out from Google as well
+      try {
+        await _authService.signOutFromGoogle();
+      } catch (e) {
+        _logger.warning('Error during Google Sign Out: $e');
+        // Continue with normal logout even if Google sign out fails
+      }
+
       await _tokenService.clearTokens();
       _isAuthenticated = false;
       _userId = null;
       _username = null;
-      notifyListeners();
+      _email = null;
+      
       _logger.info('Logout successful');
+      notifyListeners();
     } catch (e) {
       _logger.error('Logout failed', e);
-      throw AuthException(
-          message: 'Logout failed: ${e.toString()}',
-          code: 'logout_failed',
-          details: e);
+      rethrow;
     }
   }
 
@@ -93,10 +125,7 @@ class AuthProvider with ChangeNotifier {
         );
       }
 
-      await _tokenService.storeTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      );
+      await _tokenService.saveTokens(accessToken, refreshToken);
 
       _isAuthenticated = true;
       _userId = userId;
@@ -154,10 +183,7 @@ class AuthProvider with ChangeNotifier {
       }
 
       final newTokens = await _authService.refreshToken(refreshToken);
-      await _tokenService.storeTokens(
-        accessToken: newTokens['accessToken'],
-        refreshToken: newTokens['refreshToken'],
-      );
+      await _tokenService.saveTokens(newTokens['accessToken'], newTokens['refreshToken']);
 
       _logger.info('Token refresh successful');
     } catch (e) {

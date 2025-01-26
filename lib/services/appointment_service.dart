@@ -1,21 +1,32 @@
 import '../models/appointment.dart';
 import '../core/auth/auth_logger.dart';
+import '../models/appointment_request.dart';
 import 'api_service.dart';
 
+// Handles all appointment-related operations with the backend
 class AppointmentService {
   final ApiService _apiService;
   final _logger = AuthLogger('AppointmentService');
 
+  // Initialize API service
   AppointmentService() : _apiService = ApiService();
 
+  // Book a new appointment with a doctor
   Future<Appointment> bookAppointment(
       Appointment appointment, String token) async {
     try {
       _logger.info('Booking appointment for user: ${appointment.userId}');
       
+      final request = AppointmentRequest(
+        userId: appointment.userId,
+        doctorId: appointment.doctorId,
+        appointmentTime: appointment.appointmentTime,
+        status: AppointmentStatus.scheduled,
+      );
+
       final response = await _apiService.post(
         '/appointments',
-        data: appointment.toJson(),
+        data: request.toJson(),
         headers: {'Authorization': 'Bearer $token'}
       );
 
@@ -23,17 +34,18 @@ class AppointmentService {
       return Appointment.fromJson(response);
     } catch (e) {
       _logger.error('Error booking appointment', e);
-      rethrow;  // Let the error be handled by the UI layer
+      rethrow;
     }
   }
 
+  // Get list of appointments for a user
   Future<List<Appointment>> getAppointmentsByUserId(
       String userId, String token) async {
     try {
       _logger.info('Fetching appointments for user: $userId');
       
       final response = await _apiService.get(
-        '/appointments/$userId',
+        '/appointments/user/$userId',
         headers: {'Authorization': 'Bearer $token'}
       );
 
@@ -45,10 +57,11 @@ class AppointmentService {
       return appointments;
     } catch (e) {
       _logger.error('Error fetching appointments', e);
-      rethrow;  // Let the error be handled by the UI layer
+      rethrow;
     }
   }
 
+  // Cancel an existing appointment
   Future<void> cancelAppointment(String? appointmentId, String token) async {
     if (appointmentId == null) {
       throw ArgumentError('Appointment ID cannot be null for cancellation');
@@ -65,7 +78,7 @@ class AppointmentService {
       _logger.info('Successfully cancelled appointment');
     } catch (e) {
       _logger.error('Error cancelling appointment', e);
-      rethrow;  // Let the error be handled by the UI layer
+      rethrow;
     }
   }
 }

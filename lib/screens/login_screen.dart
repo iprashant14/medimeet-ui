@@ -225,9 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          minimumSize: const Size(double.infinity, 50),
                         ),
                         child: _isLoading
                             ? const SizedBox(
@@ -244,6 +242,57 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Sign In',
                                 style: TextStyle(fontSize: 16),
                               ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Row(
+                        children: [
+                          Expanded(child: Divider()),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('OR'),
+                          ),
+                          Expanded(child: Divider()),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _isLoading = true;
+                                  _error = null;
+                                });
+                                try {
+                                  await Provider.of<AuthProvider>(context,
+                                          listen: false)
+                                      .signInWithGoogle();
+                                  if (mounted) {
+                                    Navigator.of(context)
+                                        .pushReplacementNamed('/home');
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _error = e.toString();
+                                    });
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              },
+                        icon: Icon(Icons.g_mobiledata, size: 24),
+                        label: const Text('Sign in with Google'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          side: BorderSide(
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 16),
