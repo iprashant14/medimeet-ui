@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final username = Provider.of<AuthProvider>(context).username ?? 'User';
-    
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -57,7 +57,8 @@ class HomeScreen extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.logout, color: Colors.white),
                           onPressed: () {
-                            Provider.of<AuthProvider>(context, listen: false).logout();
+                            Provider.of<AuthProvider>(context, listen: false)
+                                .logout();
                             Navigator.pushReplacementNamed(context, '/login');
                           },
                         ),
@@ -66,79 +67,58 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
-              // Quick Actions Grid
+
+              // Action Cards Grid
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
                   children: [
-                    const Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    _buildActionCard(
+                      context,
+                      'Find Doctors',
+                      Icons.medical_services,
+                      Colors.orange,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DoctorListScreen()),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      children: [
-                        _buildActionCard(
-                          context,
-                          'Book Appointment',
-                          Icons.calendar_today,
-                          Colors.blue,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => DoctorListScreen()),
+                    _buildActionCard(
+                      context,
+                      'My Appointments',
+                      Icons.schedule,
+                      Colors.green,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const MyAppointmentsScreen()),
+                      ),
+                    ),
+                    _buildActionCard(
+                      context,
+                      'Profile',
+                      Icons.person,
+                      Colors.purple,
+                      () {
+                        // TODO: Navigate to profile screen
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile feature coming soon!'),
+                            behavior: SnackBarBehavior.floating,
                           ),
-                        ),
-                        _buildActionCard(
-                          context,
-                          'My Appointments',
-                          Icons.schedule,
-                          Colors.green,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const MyAppointmentsScreen()),
-                          ),
-                        ),
-                        _buildActionCard(
-                          context,
-                          'Find Doctors',
-                          Icons.medical_services,
-                          Colors.orange,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => DoctorListScreen()),
-                          ),
-                        ),
-                        _buildActionCard(
-                          context,
-                          'Profile',
-                          Icons.person,
-                          Colors.purple,
-                          () {
-                            // TODO: Navigate to profile screen
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Profile feature coming soon!'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-              
+
               // Health Tips Section
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -183,29 +163,40 @@ class HomeScreen extends StatelessWidget {
     Color color,
     VoidCallback onTap,
   ) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: color.withOpacity(0.8),
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 40,
+                color: color,
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

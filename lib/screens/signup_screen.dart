@@ -73,9 +73,9 @@ class SignupScreenState extends State<SignupScreen> {
 
     try {
       await Provider.of<AuthProvider>(context, listen: false).signup(
-        username: _usernameController.text,
-        password: _passwordController.text,
-        email: _emailController.text,
+        _emailController.text,
+        _passwordController.text,
+        _usernameController.text,
       );
       
       if (!mounted) return;
@@ -96,35 +96,33 @@ class SignupScreenState extends State<SignupScreen> {
       
       if (e is AuthException) {
         switch (e.code) {
-          case 'email_exists':
-            errorMessage = 'This email is already registered. Would you like to log in instead?';
-            actionLabel = 'LOGIN';
-            actionCallback = () => Navigator.pop(context);
+          case 'duplicate_user':
+            final message = e.message.toLowerCase();
+            if (message.contains('email')) {
+              errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+              actionLabel = 'LOGIN';
+              actionCallback = () => Navigator.pushReplacementNamed(context, '/login');
+            } else if (message.contains('username')) {
+              errorMessage = 'This username is already taken. Please choose a different username.';
+            } else {
+              errorMessage = e.message;
+            }
             break;
-          case 'username_exists':
-            errorMessage = 'This username is already taken. Please choose a different username.';
+          case 'auto_login_failed':
+            errorMessage = e.message;
+            actionLabel = 'LOGIN';
+            actionCallback = () => Navigator.pushReplacementNamed(context, '/login');
+            backgroundColor = Colors.orange[700]!;
             break;
           case 'invalid_email':
             errorMessage = 'Please enter a valid email address (e.g., user@example.com).';
             break;
-          case 'weak_password':
-            errorMessage = 'Password is too weak. Please follow the password requirements below.';
-            break;
           case 'network_error':
             errorMessage = 'Unable to connect to the internet. Please check your connection and try again.';
             break;
-          case 'invalid_username':
-            errorMessage = 'Username can only contain letters, numbers, and underscores.';
-            break;
-          case 'username_too_short':
-            errorMessage = 'Username must be at least 3 characters long.';
-            break;
-          case 'maintenance':
-            errorMessage = 'Our system is currently under maintenance. Please try again in a few minutes.';
-            backgroundColor = Colors.orange[700]!;
-            break;
           default:
-            errorMessage = 'An unexpected error occurred. Please try again later or contact support if the problem persists.';
+            errorMessage = e.message;
+            break;
         }
       } else {
         errorMessage = 'Something went wrong. Please try again later.';

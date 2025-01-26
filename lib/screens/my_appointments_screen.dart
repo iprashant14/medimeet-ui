@@ -188,9 +188,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'My Appointments',
-      ),
+      appBar: const CustomAppBar(title: 'My Appointments'),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
@@ -211,56 +209,137 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                     ],
                   ),
                 )
-              : appointments.isEmpty
-                  ? const Center(
-                      child: Text('No appointments found'),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: appointments.length,
-                      itemBuilder: (context, index) {
-                        final appointment = appointments[index];
-                        return FutureBuilder<Doctor?>(
-                          future: _getDoctorDetails(appointment.doctorId),
-                          builder: (context, snapshot) {
-                            final doctorName = snapshot.data?.name ?? 'Loading...';
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8.0),
-                              child: ListTile(
-                                title: Text('Dr. $doctorName'),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Date: ${appointment.appointmentTime.toString().split('.')[0]}',
-                                    ),
-                                    Text(
-                                      'Status: ${appointment.status}',
-                                      style: TextStyle(
-                                        color: appointment.status == 'CANCELLED'
-                                            ? Colors.red
-                                            : appointment.status == 'SCHEDULED'
-                                                ? Colors.green
-                                                : Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: appointment.status == 'SCHEDULED'
-                                    ? TextButton(
-                                        onPressed: () => _cancelAppointment(appointment),
-                                        child: const Text(
-                                          'Cancel',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            );
+              : Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      child: Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: Theme.of(context).primaryColor.withOpacity(0.2),
+                          ),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pushNamed('/doctors');
                           },
-                        );
-                      },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Schedule Appointment',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
+                    Expanded(
+                      child: appointments.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No appointments found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _fetchAppointments,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                itemCount: appointments.length,
+                                itemBuilder: (context, index) {
+                                  final appointment = appointments[index];
+                                  return FutureBuilder<Doctor?>(
+                                    future: _getDoctorDetails(appointment.doctorId),
+                                    builder: (context, snapshot) {
+                                      final doctorName = snapshot.data?.name ?? 'Loading...';
+                                      return Card(
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 8,
+                                          ),
+                                          title: Text(
+                                            'Dr. $doctorName',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          subtitle: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Date: ${appointment.appointmentTime.toString().split('.')[0]}',
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Status: ${appointment.status}',
+                                                style: TextStyle(
+                                                  color: appointment.status == 'CANCELLED'
+                                                      ? Colors.red
+                                                      : appointment.status == 'SCHEDULED'
+                                                          ? Colors.green
+                                                          : Colors.black,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          trailing: appointment.status == 'SCHEDULED'
+                                              ? TextButton(
+                                                  onPressed: () => _cancelAppointment(appointment),
+                                                  child: const Text(
+                                                    'Cancel',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                )
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
     );
   }
 }

@@ -19,26 +19,32 @@ class AuthProvider with ChangeNotifier {
   String? get username => _username;
 
   // Login method
-  Future<void> login(String username, String password) async {
+  Future<void> login(String email, String password) async {
     try {
-      _logger.info('Attempting login for user: $username');
-      final loginResponse = await _authService.login(username, password);
+      _logger.info('Attempting login for user: $email');
+      final loginResponse = await _authService.login(email, password);
 
-      if (loginResponse['userId'] == null) {
+      final userId = loginResponse['userId']?.toString();
+      final username = loginResponse['username']?.toString();
+      final accessToken = loginResponse['accessToken']?.toString();
+      final refreshToken = loginResponse['refreshToken']?.toString();
+
+      if (userId == null || accessToken == null || refreshToken == null) {
         throw AuthException(
-            message: 'Invalid login response from server',
-            code: 'invalid_response');
+          message: 'Invalid login response from server',
+          code: 'invalid_response',
+        );
       }
 
       await _tokenService.storeTokens(
-        accessToken: loginResponse['accessToken'],
-        refreshToken: loginResponse['refreshToken'],
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       );
 
       _isAuthenticated = true;
-      _userId = loginResponse['userId'];
-      _username = username;
-      _logger.info('Login successful for user: $username (ID: $_userId)');
+      _userId = userId;
+      _username = username ?? 'User'; // Use username from response or fallback to 'User'
+      _logger.info('Login successful for user: $_username (ID: $_userId)');
       debugPrint('🔐 Login successful - User ID: $_userId, Token stored');
       notifyListeners();
     } catch (e) {
@@ -46,13 +52,7 @@ class AuthProvider with ChangeNotifier {
       _isAuthenticated = false;
       _userId = null;
       _username = null;
-      if (e is AuthException) {
-        rethrow;
-      }
-      throw AuthException(
-          message: 'Login failed: ${e.toString()}',
-          code: 'login_failed',
-          details: e);
+      rethrow;
     }
   }
 
@@ -76,33 +76,40 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Signup method
-  Future<void> signup({
-    required String username,
-    required String password,
-    required String email,
-  }) async {
+  Future<void> signup(String email, String password, String username) async {
     try {
-      _logger.info('Attempting signup for user: $username');
-      final signupResponse = await _authService.signup(username, password, email);
-      _logger.info('Signup successful for user: $username');
+      _logger.info('Attempting signup for user: $email');
+      final signupResponse = await _authService.signup(email, password, username);
 
-      // Automatically log in after successful signup
+      final userId = signupResponse['userId']?.toString();
+      final accessToken = signupResponse['accessToken']?.toString();
+      final refreshToken = signupResponse['refreshToken']?.toString();
+      final responseUsername = signupResponse['username']?.toString();
+
+      if (userId == null || accessToken == null || refreshToken == null) {
+        throw AuthException(
+          message: 'Invalid signup response from server',
+          code: 'invalid_response',
+        );
+      }
+
       await _tokenService.storeTokens(
-        accessToken: signupResponse['accessToken'],
-        refreshToken: signupResponse['refreshToken'],
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       );
 
       _isAuthenticated = true;
-      _userId = signupResponse['userId'];
-      _username = username;
-      _logger.info('Auto-login successful after signup - User ID: $_userId');
+      _userId = userId;
+      _username = responseUsername ?? username;  // Use response username or fallback to provided username
+      _logger.info('Signup successful for user: $_username (ID: $_userId)');
+      debugPrint('🔐 Signup successful - User ID: $_userId, Token stored');
       notifyListeners();
     } catch (e) {
       _logger.error('Signup failed', e);
-      throw AuthException(
-          message: 'Signup failed: ${e.toString()}',
-          code: 'signup_failed',
-          details: e);
+      _isAuthenticated = false;
+      _userId = null;
+      _username = null;
+      rethrow;
     }
   }
 
@@ -157,6 +164,26 @@ class AuthProvider with ChangeNotifier {
       _logger.error('Token refresh failed', e);
       await logout();
       throw TokenRefreshException(
+          message: 'Failed to refresh token: ${e.toString()}');
+    }
+  }
+
+  Future<void> refreshToken() async {
+    try {
+      _logger.info('Refreshing tokens');
+      final refreshToken = await _tokenService.getRefreshToken();
+      if (refreshToken == null) {
+        throw AuthException(
+          code: 'refresh-token-missing',
+          message: 'No refresh token available'
+        );
+      }
+      await _authService.refreshToken(refreshToken);
+      _logger.info('Tokens refreshed successfully');
+    } catch (e) {
+      _logger.error('Failed to refresh token: ${e.toString()}');
+      throw AuthException(
+          code: 'refresh-token-failed',
           message: 'Failed to refresh token: ${e.toString()}');
     }
   }

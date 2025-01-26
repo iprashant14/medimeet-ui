@@ -53,8 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (e is AuthException) {
         switch (e.code) {
           case 'invalid_credentials':
-            errorMessage =
-                'The email or password you entered is incorrect. Please try again.';
+            errorMessage = e.message;
             break;
           case 'user_not_found':
             errorMessage = 'No account found with this email. Need an account?';
@@ -62,16 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
             actionCallback = () => Navigator.pushNamed(context, '/signup');
             break;
           case 'invalid_response':
-            errorMessage =
-                'We\'re having trouble connecting to our servers. Please try again in a moment.';
+            errorMessage = e.message;
             break;
           case 'network_error':
             errorMessage =
                 'Unable to connect to the internet. Please check your connection and try again.';
             break;
           case 'unauthorized':
-            errorMessage =
-                'Your login credentials are incorrect. Please verify and try again.';
+            errorMessage = e.message;
             break;
           case 'token_expired':
             errorMessage =
@@ -90,8 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor = Colors.orange[700]!;
             break;
           default:
-            errorMessage =
-                'An unexpected error occurred. Please try again later or contact support if the problem persists.';
+            errorMessage = e.message;
         }
       } else {
         errorMessage = 'Something went wrong. Please try again later.';
@@ -109,25 +105,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
+              if (actionLabel != null)
+                TextButton(
+                  onPressed: actionCallback,
+                  child: Text(
+                    actionLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
           backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 5),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 4),
-          action: actionLabel != null
-              ? SnackBarAction(
-                  label: actionLabel,
-                  textColor: Colors.white,
-                  onPressed: actionCallback!,
-                )
-              : null,
         ),
       );
-
-      setState(() {
-        _error = errorMessage;
-      });
     } finally {
       if (mounted) {
         setState(() {

@@ -5,7 +5,8 @@ import 'screens/signup_screen.dart';
 import 'providers/auth_provider.dart';
 import 'screens/home_screen.dart';
 import 'core/auth/auth_guard.dart';
-import 'screens/appointment_booking_screen.dart'; // Added import statement
+import 'screens/appointment_booking_screen.dart';
+import 'screens/doctor_list_screen.dart'; 
 
 void main() {
   runApp(MyApp());
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
           '/signup': (context) => SignupScreen(),
           '/home': (context) => AuthGuard(child: HomeScreen()),
           '/book-appointment': (context) => AuthGuard(child: AppointmentBookingScreen()),
+          '/doctors': (context) => AuthGuard(child: DoctorListScreen()), 
           // Add other protected routes here with AuthGuard
         },
       ),
