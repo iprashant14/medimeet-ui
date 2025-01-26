@@ -26,6 +26,8 @@
   <meta name="apple-mobile-web-app-title" content="medimeet">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
+  <!-- Google Sign In meta tag -->
+<meta name="google-signin-client_id" content="">
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
@@ -34,26 +36,21 @@
   
 <!-- Google Identity Services -->
 <!-- Google Sign In configuration -->
-<meta name="google-signin-client_id" content="${GOOGLE_WEB_CLIENT_ID}">
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 
 <script>
-window.addEventListener('load', function() {
-  gapi.load('auth2', function() {
-    gapi.auth2.init({
-      client_id: '${GOOGLE_WEB_CLIENT_ID}',
-      scope: 'email profile openid https://www.googleapis.com/auth/userinfo.email',
-      fetch_basic_profile: true,
-      ux_mode: 'popup',
-      cookie_policy: 'single_host_origin',
-      hosted_domain: 'gmail.com'
-    }).then(function(auth2) {
-      console.log('Google Auth initialized');
-    });
+  window.addEventListener('load', function() {
+    window.setGoogleClientId = function(clientId) {
+      const metaTag = document.querySelector('meta[name="google-signin-client_id"]');
+      if (metaTag) {
+        metaTag.setAttribute('content', clientId);
+      } else {
+        console.error('Google Sign-in meta tag not found');
+      }
+    };
   });
-});
-</script>
+  </script>
 
   <script>
     // The value below is injected by flutter build, do not touch.
