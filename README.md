@@ -171,3 +171,153 @@ flutter build ios --flavor production --target lib/main_production.dart
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## Frontend README
+
+### MediMeet Frontend
+
+A Flutter web application for doctor appointment booking with Google Sign-In authentication.
+
+### Prerequisites
+
+- Flutter SDK 3.0+
+- Dart SDK 3.0+
+- Google Cloud Console project with OAuth 2.0 configured
+
+### Local Development Setup
+
+1. **Clone the Repository**
+```bash
+git clone <repository-url>
+cd medimeet
+```
+
+2. **Install Dependencies**
+```bash
+flutter pub get
+```
+
+3. **Configure Environment Variables**
+
+Create `.env` file in the root directory:
+```properties
+# Backend API
+BACKEND_URL=http://localhost:8080/api
+
+# Google OAuth
+GOOGLE_WEB_CLIENT_ID=your-google-web-client-id
+GOOGLE_ANDROID_CLIENT_ID=your-android-client-id  # If using Android
+```
+
+4. **Configure Google Sign-In**
+- Go to [Google Cloud Console](https://console.cloud.google.com)
+- Create a new project or select existing
+- Enable Google Sign-In API
+- Create OAuth 2.0 credentials
+- Add authorized JavaScript origins:
+  - `http://localhost:3000` (development)
+  - Your production URL
+
+5. **Run the Application**
+
+For web:
+```bash
+# Development
+flutter run -d chrome --web-port=3000
+
+# Production build
+flutter build web
+```
+
+For Android:
+```bash
+flutter run -d android
+```
+
+The application will start on `http://localhost:3000` for web development.
+
+### Project Structure
+```
+lib/
+├── main.dart           # Application entry point
+├── models/            # Data models
+├── providers/         # State management
+├── screens/           # UI screens
+├── services/          # API services
+├── utils/            # Utility functions
+└── widgets/          # Reusable widgets
+```
+
+### Features
+
+1. **Authentication**
+   - Google Sign-In integration
+   - Session management
+   - Secure token storage
+
+2. **Doctor Management**
+   - View doctor listings
+   - Search and filter doctors
+   - View doctor details
+
+3. **Appointments**
+   - Book appointments
+   - View upcoming appointments
+   - Cancel appointments
+   - View appointment history
+
+### State Management
+
+The application uses the Provider pattern for state management:
+- `AuthProvider`: Manages authentication state
+- `AppointmentProvider`: Manages appointment data
+- `DoctorProvider`: Manages doctor listings
+
+### API Integration
+
+All API calls are handled through service classes:
+- `AuthService`: Authentication operations
+- `DoctorService`: Doctor-related operations
+- `AppointmentService`: Appointment operations
+
+### Error Handling
+
+The application implements comprehensive error handling:
+- Network errors
+- Authentication errors
+- Input validation
+- User-friendly error messages
+
+### Development Guidelines
+
+1. **Code Style**
+   - Follow Flutter/Dart style guide
+   - Use meaningful variable and widget names
+   - Add comments for complex widgets
+
+2. **Git Workflow**
+   - Create feature branches from `develop`
+   - Use meaningful commit messages
+   - Submit pull requests for review
+
+3. **Testing**
+   - Write widget tests
+   - Test API integration
+   - Verify error handling
+
+### Troubleshooting
+
+1. **Google Sign-In Issues**
+   - Verify client IDs in `.env`
+   - Check authorized origins in Google Console
+   - Clear browser cache if testing web
+
+2. **API Connection Issues**
+   - Verify backend URL in `.env`
+   - Check if backend server is running
+   - Verify network connectivity
+
+3. **Build Issues**
+   - Run `flutter clean`
+   - Delete build cache
+   - Update dependencies
