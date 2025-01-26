@@ -2,14 +2,34 @@
 
 A Flutter-based mobile application for booking and managing medical appointments.
 
+## Technology Stack
+
+- **Framework**: Flutter
+- **State Management**: Provider Pattern
+- **HTTP Client**: Dio
+- **Local Storage**: flutter_secure_storage
+- **UI Components**: Material Design
+
 ## Features
 
-- **User Authentication**: Secure login and registration system
-- **Doctor Directory**: Browse through list of available doctors with their specialties
-- **Appointment Booking**: Book appointments with preferred doctors
-- **Appointment Management**: View and cancel scheduled appointments
-- **Real-time Updates**: Get instant updates on appointment status
-- **Doctor Information**: View detailed information about doctors
+- **Authentication**
+  - Secure login and registration
+  - JWT token management
+  - Token refresh handling
+  
+- **Doctor Management**
+  - Browse available doctors
+  - Search and filter functionality
+  - Doctor profile viewing
+  
+- **Appointment System**
+  - Interactive appointment booking
+  - View and manage appointments
+  - Appointment status tracking
+  
+- **User Profile**
+  - Profile management
+  - Appointment history
 
 ## Prerequisites
 
@@ -17,6 +37,20 @@ A Flutter-based mobile application for booking and managing medical appointments
 - Dart SDK
 - Android Studio / Xcode for emulators
 - Git
+
+## Project Structure
+
+```
+lib/
+├── core/
+│   ├── auth/           # Authentication logic
+│   └── network/        # Network handling
+├── models/            # Data models
+├── providers/         # State management
+├── screens/          # UI screens
+├── services/         # API services
+└── widgets/          # Reusable widgets
+```
 
 ## Getting Started
 
@@ -31,58 +65,103 @@ A Flutter-based mobile application for booking and managing medical appointments
    flutter pub get
    ```
 
-3. **Set up environment variables**
-   Create a `.env` file in the root directory with:
+3. **Configure Environment**
+   Create `.env` files for different environments:
    ```
+   # .env.development
    API_BASE_URL=http://localhost:8080/api
+   ENV=development
+   
+   # .env.production
+   API_BASE_URL=https://api.medimeet.com
+   ENV=production
    ```
 
 4. **Run the app**
    ```bash
-   # Run in debug mode
-   flutter run
-
-   # Run in release mode
-   flutter run --release
+   # Development
+   flutter run --flavor development --target lib/main_development.dart
+   
+   # Production
+   flutter run --flavor production --target lib/main_production.dart
    ```
 
-## Project Structure
+## Error Handling
 
-```
-lib/
-├── core/          # Core functionality (auth, logging)
-├── models/        # Data models
-├── providers/     # State management
-├── screens/       # UI screens
-├── services/      # API services
-└── widgets/       # Reusable widgets
-```
+The app currently implements error handling for:
 
-## Key Dependencies
+### Authentication Errors
+- Invalid credentials
+- Token expiration
+- Token refresh failures
+- Unauthenticated access
+- Unauthorized access
 
-- **provider**: State management
-- **dio**: HTTP client
-- **flutter_secure_storage**: Secure storage for tokens
-- **table_calendar**: Calendar widget for appointment booking
+### Screen-Level Error Handling
+- Error state management in screens
+- User-friendly error messages
+- Navigation handling for auth errors
 
-## Development
+TODO: Additional error handling to implement:
+- [ ] Offline mode handling
+- [ ] Comprehensive API response error handling
+- [ ] Form validation error handling
+- [ ] Network connectivity monitoring
+- [ ] Retry mechanisms for failed requests
 
-### Running Tests
+## Testing Status
+
+The application currently has no implemented test cases. Platform-specific test directories exist for:
+- iOS test directory (`ios/RunnerTests/`)
+- macOS test directory (`macos/RunnerTests/`)
+
+TODO: Implement comprehensive testing:
+- [ ] Widget tests for screens and components
+- [ ] Integration tests for user flows
+- [ ] Unit tests for services and utilities
+- [ ] State management tests
+
+## Future Enhancements
+
+### Caching Strategy
+- [ ] Local database implementation (Hive/SQLite)
+- [ ] Offline data synchronization
+- [ ] Image caching
+
+### Performance Optimization
+- [ ] Lazy loading for images
+- [ ] Efficient state management
+- [ ] Network request optimization
+
+### Security Enhancements
+- [ ] Biometric authentication
+- [ ] Certificate pinning
+- [ ] Secure storage encryption
+
+### CI/CD Pipeline
+- [ ] Automated testing
+- [ ] Build automation
+- [ ] Deployment automation
+
+## Building for Production
+
+### Android
 ```bash
-# Run all tests
-flutter test
+# Generate keystore
+keytool -genkey -v -keystore upload-keystore.jks -storetype JKS \
+-keyalg RSA -keysize 2048 -validity 10000 -alias upload
 
-# Run tests with coverage
-flutter test --coverage
-```
-
-### Building for Production
-```bash
 # Build APK
-flutter build apk
+flutter build apk --flavor production --target lib/main_production.dart
 
-# Build iOS
-flutter build ios
+# Build App Bundle
+flutter build appbundle --flavor production --target lib/main_production.dart
+```
+
+### iOS
+```bash
+# Build iOS release
+flutter build ios --flavor production --target lib/main_production.dart
 ```
 
 ## Contributing
@@ -92,20 +171,3 @@ flutter build ios
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## Troubleshooting
-
-Common issues and their solutions:
-
-1. **Build Errors**
-   - Clean the project: `flutter clean`
-   - Get dependencies again: `flutter pub get`
-
-2. **API Connection Issues**
-   - Verify API URL in .env file
-   - Check if backend server is running
-   - Verify network connectivity
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details

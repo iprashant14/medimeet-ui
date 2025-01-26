@@ -1,250 +1,124 @@
 # MediMeet UI Documentation
 
-## High-Level Design (HLD)
+## Current Implementation
 
-### System Overview
-MediMeet is a medical appointment booking application built using Flutter, providing a cross-platform solution for patients to schedule and manage appointments with doctors.
-
-### Architecture
-- **Framework**: Flutter (Cross-platform)
+### Technology Stack
+- **Framework**: Flutter
 - **State Management**: Provider Pattern
-- **Architecture Pattern**: MVVM (Model-View-ViewModel)
-- **Network Layer**: Dio for HTTP requests
-- **Local Storage**: Flutter Secure Storage, Shared Preferences
+- **HTTP Client**: Dio
+- **Local Storage**: flutter_secure_storage
+- **UI Components**: Material Design
 
-### Key Components
-1. **Authentication Module**
-   - Login/Registration
-   - Token Management
-   - Session Handling
+### Core Services
 
-2. **Appointment Management**
-   - Appointment Booking
-   - Appointment Viewing
-   - Appointment Cancellation
+1. **API Service** (`api_service.dart`)
+   - Base HTTP client configuration
+   - API request handling
+   - Error handling
 
-3. **Doctor Management**
-   - Doctor Listing
-   - Doctor Details
-   - Doctor Search
+2. **Authentication Service** (`auth_service.dart`)
+   - User login
+   - User registration
+   - Token management
+
+3. **Token Service** (`token_service.dart`)
+   - JWT token storage
+   - Token refresh handling
+   - Secure token management
+
+4. **Doctor Service** (`doctor_service.dart`)
+   - Doctor listing
+   - Doctor details
+   - Doctor search
+
+5. **Appointment Service** (`appointment_service.dart`)
+   - Appointment booking
+   - Appointment management
+   - Appointment status updates
+
+### Features
+
+1. **Authentication**
+   - Login screen
+   - Registration screen
+   - Token-based authentication
+   - Secure token storage
+
+2. **Doctor Management**
+   - Doctor listing
+   - Doctor details view
+   - Doctor search functionality
+
+3. **Appointment System**
+   - Appointment booking
+   - Appointment viewing
+   - Appointment cancellation
 
 4. **User Profile**
-   - User Information
-   - Preferences Management
+   - Profile management
+   - Appointment history
 
-### Security Features
-- JWT Token Authentication
-- Secure Storage for Sensitive Data
-- HTTPS Communication
-- Input Validation
-
-## Low-Level Design (LLD)
-
-### Directory Structure
+### Project Structure
 ```
 lib/
 ├── core/
-│   ├── auth/
-│   │   ├── auth_exceptions.dart
-│   │   └── auth_logger.dart
-├── models/
-│   ├── appointment.dart
-│   ├── doctor.dart
-│   └── user.dart
-├── providers/
-│   └── auth_provider.dart
-├── screens/
-│   ├── appointment_booking_screen.dart
-│   ├── doctor_list_screen.dart
-│   ├── home_screen.dart
-│   ├── login_screen.dart
-│   └── my_appointments_screen.dart
-├── services/
-│   ├── api_service.dart
-│   ├── appointment_service.dart
-│   ├── doctor_service.dart
-│   └── token_service.dart
-└── widgets/
-    └── custom_app_bar.dart
+│   ├── auth/           # Authentication logic
+│   └── network/        # Network handling
+├── models/            # Data models
+├── providers/         # State management
+├── screens/          # UI screens
+├── services/         # API services
+└── widgets/          # Reusable widgets
 ```
 
-### Component Details
+## Future Implementations
 
-#### 1. Models
-- **Appointment**: Represents appointment data with status management
-- **Doctor**: Contains doctor information and specialties
-- **User**: Manages user profile data
+### Caching Strategy
+1. **Local Storage**
+   - Hive for local database
+   - SQLite for complex queries
+   - Cached network images
 
-#### 2. Services
-- **ApiService**: Central service for HTTP communications
-- **AppointmentService**: Handles appointment-related operations
-- **DoctorService**: Manages doctor-related operations
-- **TokenService**: Handles JWT token management
+2. **State Persistence**
+   - Hydrated BLoC
+   - Persistent provider state
+   - Offline data sync
 
-#### 3. Screens
-- **AppointmentBookingScreen**: 
-  - Calendar-based appointment scheduling
-  - Time slot selection
-  - Doctor selection
-- **DoctorListScreen**: 
-  - Displays available doctors
-  - Search and filter functionality
-- **MyAppointmentsScreen**:
-  - Lists user appointments
-  - Cancellation functionality
-  - Status tracking
+### Testing Strategy
 
-#### 4. Providers
-- **AuthProvider**: 
-  - Manages authentication state
-  - Handles token refresh
-  - User session management
+1. **Widget Tests**
+   - Screen widget tests
+   - Component tests
+   - Navigation tests
 
-### Data Flow
-1. **Appointment Booking Flow**:
-   ```
-   User → DoctorListScreen → AppointmentBookingScreen → AppointmentService → Backend
-   ```
+2. **Integration Tests**
+   - User flow tests
+   - API integration tests
+   - State management tests
 
-2. **Authentication Flow**:
-   ```
-   User → LoginScreen → AuthProvider → TokenService → Backend
-   ```
+3. **Unit Tests**
+   - Service layer tests
+   - Utility function tests
+   - Model tests
 
-3. **Appointment Management Flow**:
-   ```
-   User → MyAppointmentsScreen → AppointmentService → Backend
-   ```
+### CI/CD Pipeline
 
-## Code Documentation
+1. **Build Automation**
+   - GitHub Actions
+   - Codemagic
+   - Fastlane
 
-### Key Classes and Methods
+2. **Testing Automation**
+   - Automated testing
+   - Code coverage reports
+   - Static analysis
 
-#### ApiService
-```dart
-class ApiService {
-  // Handles HTTP requests with authentication
-  Future<dynamic> get(String endpoint);
-  Future<dynamic> post(String endpoint, {dynamic data});
-  Future<dynamic> put(String endpoint, {dynamic data});
-  Future<dynamic> delete(String endpoint);
-}
-```
+3. **Deployment**
+   - App store deployment
+   - Play store deployment
+   - Beta testing distribution
 
-#### AppointmentService
-```dart
-class AppointmentService {
-  // Books a new appointment
-  Future<Appointment> bookAppointment(Appointment appointment, String token);
-  
-  // Retrieves user appointments
-  Future<List<Appointment>> getAppointmentsByUserId(String userId, String token);
-  
-  // Cancels an existing appointment
-  Future<void> cancelAppointment(String appointmentId, String token);
-}
-```
-
-#### TokenService
-```dart
-class TokenService {
-  // Manages access tokens
-  Future<String?> getAccessToken();
-  Future<void> setAccessToken(String token);
-  Future<bool> isAccessTokenValid();
-}
-```
-
-### State Management
-The application uses Provider pattern for state management:
-```dart
-class AuthProvider extends ChangeNotifier {
-  String? _userId;
-  String? _token;
-  
-  Future<void> login(String email, String password);
-  Future<void> logout();
-  Future<void> refreshAuthToken();
-}
-```
-
-### UI Components
-- Custom widgets for reusability
-- Material Design components
-- Responsive layouts
-- Error handling and loading states
-
-### Security Implementation
-```dart
-// Secure storage implementation
-final _storage = const FlutterSecureStorage();
-await _storage.write(key: 'token', value: token);
-
-// API request with authentication
-_dio.options.headers = {
-  'Authorization': 'Bearer $token',
-  'Content-Type': 'application/json',
-};
-```
-
-### Error Handling
-The UI handles errors at multiple levels:
-
-1. **Service Layer**
-```dart
-class AppointmentService {
-  Future<List<Appointment>> getUserAppointments(String userId) async {
-    try {
-      final response = await _apiService.get('/appointments/$userId');
-      return List<Appointment>.from(
-          response.map((json) => Appointment.fromJson(json)));
-    } catch (e) {
-      throw Exception('Failed to load appointments');
-    }
-  }
-}
-```
-
-2. **Screen Level**
-```dart
-try {
-  await _appointmentService.cancelAppointment(appointment.id);
-  setState(() {
-    appointments[index] = appointment.copyWith(status: 'CANCELLED');
-  });
-} catch (e) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('Failed to cancel appointment'),
-      backgroundColor: Colors.red,
-    ),
-  );
-}
-```
-
-3. **Widget Level**
-- Loading indicators during async operations
-- Error messages in SnackBars
-- Retry options for failed operations
-
-## Testing Strategy
-
-### Unit Tests
-- Service layer tests
-- Model tests
-- Provider tests
-
-### Widget Tests
-- Screen widget tests
-- Custom widget tests
-- Navigation tests
-
-### Integration Tests
-- End-to-end flow tests
-- API integration tests
-- State management tests
-
-## Performance Considerations
+### Performance Optimization
 
 1. **Image Optimization**
    - Lazy loading
@@ -253,44 +127,56 @@ try {
 
 2. **State Management**
    - Efficient provider usage
-   - Minimal rebuilds
-   - Memory management
+   - Memory optimization
+   - State disposal
 
 3. **Network Optimization**
    - Request caching
-   - Pagination
-   - Debouncing
+   - Batch requests
+   - Connection pooling
 
-## Security Considerations
+### Security Enhancements
 
-1. **Data Storage**
-   - Secure storage for sensitive data
-   - Encryption for local storage
-   - Token management
-
-2. **Network Security**
-   - HTTPS only
+1. **Data Security**
+   - Secure storage
+   - Data encryption
    - Certificate pinning
-   - Token refresh mechanism
 
-3. **Input Validation**
+2. **Authentication**
+   - Biometric authentication
+   - 2FA implementation
+   - Session management
+
+3. **Code Security**
+   - Code obfuscation
+   - Root detection
+   - SSL pinning
+
+### Accessibility
+
+1. **Screen Readers**
+   - TalkBack support
+   - VoiceOver support
+   - Semantic labels
+
+2. **UI Adaptations**
+   - Dynamic text sizing
+   - Color contrast
+   - Screen rotation support
+
+### Error Handling
+
+1. **Network Errors**
+   - Offline mode
+   - Retry mechanisms
+   - Error messages
+
+2. **User Input Validation**
    - Form validation
-   - Data sanitization
-   - Error handling
+   - Input formatting
+   - Error feedback
 
-## Deployment Guidelines
-
-1. **Release Preparation**
-   - Version management
-   - Asset optimization
-   - Environment configuration
-
-2. **Build Process**
-   - Flutter build commands
-   - Platform-specific settings
-   - Release signing
-
-3. **Distribution**
-   - App store guidelines
-   - Release notes
-   - Update mechanism
+3. **State Error Handling**
+   - Error boundaries
+   - State recovery
+   - Error logging
