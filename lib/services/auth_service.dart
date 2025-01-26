@@ -6,10 +6,10 @@ class AuthService {
   final String baseUrl = 'http://localhost:8080/api/auth';
 
   /// Login method
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await _dio.post('$baseUrl/login',
-          data: {'username': username, 'password': password});
+          data: {'email': email, 'password': password});
       return response.data;
     } catch (e) {
       throw Exception('Login failed: ${e.toString()}');

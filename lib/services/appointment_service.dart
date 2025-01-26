@@ -48,4 +48,24 @@ class AppointmentService {
       rethrow;  // Let the error be handled by the UI layer
     }
   }
+
+  Future<void> cancelAppointment(String? appointmentId, String token) async {
+    if (appointmentId == null) {
+      throw ArgumentError('Appointment ID cannot be null for cancellation');
+    }
+    
+    try {
+      _logger.info('Cancelling appointment: $appointmentId');
+      
+      await _apiService.put(
+        '/appointments/$appointmentId/cancel',
+        headers: {'Authorization': 'Bearer $token'}
+      );
+
+      _logger.info('Successfully cancelled appointment');
+    } catch (e) {
+      _logger.error('Error cancelling appointment', e);
+      rethrow;  // Let the error be handled by the UI layer
+    }
+  }
 }

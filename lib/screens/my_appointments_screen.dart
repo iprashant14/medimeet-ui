@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/appointment.dart';
-import '../services/api_service.dart' as api;
+import '../models/doctor.dart';
+import '../services/appointment_service.dart';
+import '../services/doctor_service.dart';
 import '../core/auth/auth_exceptions.dart';
+import '../core/auth/auth_logger.dart';
+import '../providers/auth_provider.dart';
+import '../services/token_service.dart';
+import '../widgets/custom_app_bar.dart';
 
 class MyAppointmentsScreen extends StatefulWidget {
   const MyAppointmentsScreen({Key? key}) : super(key: key);
@@ -11,9 +18,15 @@ class MyAppointmentsScreen extends StatefulWidget {
 }
 
 class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
+  final _logger = AuthLogger('MyAppointmentsScreen');
+  final _tokenService = TokenService();
+  final _appointmentService = AppointmentService();
+  final _doctorService = DoctorService();
+  
   List<Appointment> appointments = [];
   bool isLoading = true;
   String? error;
+  Map<String, Doctor> _doctorCache = {};
 
   @override
   void initState() {
@@ -21,68 +34,232 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
     _fetchAppointments();
   }
 
-  Future<void> _fetchAppointments() async {
+  Future<Doctor?> _getDoctorDetails(String doctorId) async {
+    if (_doctorCache.containsKey(doctorId)) {
+      return _doctorCache[doctorId];
+    }
     try {
-      final response = await api.ApiService().get('/appointments');
+      final doctor = await _doctorService.getDoctorById(doctorId);
+      _doctorCache[doctorId] = doctor;
+      return doctor;
+    } catch (e) {
+      _logger.error('Error fetching doctor details', e);
+      return null;
+    }
+  }
+
+  Future<void> _fetchAppointments() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+    
+    try {
+      final token = await _tokenService.getAccessToken();
+      if (token == null) {
+        throw AuthException(
+          message: 'Please log in to view appointments',
+          code: 'unauthenticated'
+        );
+      }
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
+      
+      if (userId == null) {
+        throw AuthException(
+          message: 'User not authenticated',
+          code: 'unauthorized'
+        );
+      }
+      
+      final fetchedAppointments = await _appointmentService.getAppointmentsByUserId(userId, token);
+      
       if (mounted) {
         setState(() {
-          appointments = (response as List)
-              .map((json) => Appointment.fromJson(json))
-              .toList();
+          appointments = fetchedAppointments;
           isLoading = false;
         });
       }
+    } on AuthException catch (e) {
+      _handleError(e);
     } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  Future<void> _cancelAppointment(Appointment appointment) async {
+    if (appointment.id == null) {
+      _showError('Cannot cancel appointment: Invalid appointment ID');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final token = await _tokenService.getAccessToken();
+      if (token == null) {
+        throw AuthException(
+          message: 'Please log in to cancel appointments',
+          code: 'unauthenticated'
+        );
+      }
+
+      await _appointmentService.cancelAppointment(appointment.id, token);
+      
+      if (!mounted) return;
+      
+      // Update the appointment status locally
+      setState(() {
+        final index = appointments.indexWhere((a) => a.id == appointment.id);
+        if (index != -1) {
+          appointments[index] = appointment.copyWith(status: 'CANCELLED');
+        }
+      });
+      
+      await _fetchAppointments();  // Refresh the appointments list
+      _showSuccess('Appointment cancelled successfully');
+      
+    } on AuthException catch (e) {
+      _handleError(e);
+    } catch (e) {
+      _handleError(e);
+    } finally {
       if (mounted) {
         setState(() {
-          String errorMessage = 'Unable to load appointments. Please try again later.';
-          
-          if (e is AuthException) {
-            switch (e.code) {
-              case 'unauthorized':
-                errorMessage = 'Please log in to view your appointments.';
-                break;
-              case 'token_expired':
-                errorMessage = 'Your session has expired. Please log in again.';
-                break;
-              case 'network_error':
-                errorMessage = 'Network error. Please check your internet connection.';
-                break;
-            }
-          }
-          
-          error = errorMessage;
           isLoading = false;
         });
       }
     }
   }
 
+  void _handleError(dynamic e) {
+    if (!mounted) return;
+    
+    setState(() {
+      String errorMessage;
+      if (e is AuthException) {
+        switch (e.code) {
+          case 'unauthorized':
+          case 'unauthenticated':
+            errorMessage = 'Please log in to view your appointments.';
+            Navigator.of(context).pushReplacementNamed('/login');
+            break;
+          case 'forbidden':
+            errorMessage = 'You do not have permission to view these appointments.';
+            break;
+          case 'token_expired':
+            errorMessage = 'Your session has expired. Please log in again.';
+            Navigator.of(context).pushReplacementNamed('/login');
+            break;
+          default:
+            errorMessage = e.message;
+        }
+      } else {
+        errorMessage = 'An unexpected error occurred. Please try again later.';
+        _logger.error('Unexpected error', e);
+      }
+      
+      error = errorMessage;
+      isLoading = false;
+    });
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Appointments')),
+      appBar: const CustomAppBar(
+        title: 'My Appointments',
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-              ? Center(child: Text('Error: $error'))
-              : appointments.isEmpty
-                  ? const Center(child: Text('No appointments booked yet.'))
-                  : RefreshIndicator(
-                      onRefresh: _fetchAppointments,
-                      child: ListView.builder(
-                        itemCount: appointments.length,
-                        itemBuilder: (context, index) {
-                          final appointment = appointments[index];
-                          return ListTile(
-                            title: Text('Appointment ID: ${appointment.userId}'),
-                            subtitle: Text(
-                              'Doctor ID: ${appointment.doctorId}\n'
-                              'Date: ${appointment.appointmentTime.toLocal()}',
-                            ),
-                          );
-                        },
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        error!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _fetchAppointments,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : appointments.isEmpty
+                  ? const Center(
+                      child: Text('No appointments found'),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: appointments.length,
+                      itemBuilder: (context, index) {
+                        final appointment = appointments[index];
+                        return FutureBuilder<Doctor?>(
+                          future: _getDoctorDetails(appointment.doctorId),
+                          builder: (context, snapshot) {
+                            final doctorName = snapshot.data?.name ?? 'Loading...';
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8.0),
+                              child: ListTile(
+                                title: Text('Dr. $doctorName'),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Date: ${appointment.appointmentTime.toString().split('.')[0]}',
+                                    ),
+                                    Text(
+                                      'Status: ${appointment.status}',
+                                      style: TextStyle(
+                                        color: appointment.status == 'CANCELLED'
+                                            ? Colors.red
+                                            : appointment.status == 'SCHEDULED'
+                                                ? Colors.green
+                                                : Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: appointment.status == 'SCHEDULED'
+                                    ? TextButton(
+                                        onPressed: () => _cancelAppointment(appointment),
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
     );
   }

@@ -12,9 +12,11 @@ class AuthProvider with ChangeNotifier {
 
   bool _isAuthenticated = false;
   String? _userId;
+  String? _username;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get userId => _userId;
+  String? get username => _username;
 
   // Login method
   Future<void> login(String username, String password) async {
@@ -35,12 +37,15 @@ class AuthProvider with ChangeNotifier {
 
       _isAuthenticated = true;
       _userId = loginResponse['userId'];
-      _logger.info('Login successful for user: $username');
+      _username = username;
+      _logger.info('Login successful for user: $username (ID: $_userId)');
+      debugPrint('🔐 Login successful - User ID: $_userId, Token stored');
       notifyListeners();
     } catch (e) {
       _logger.error('Login failed', e);
       _isAuthenticated = false;
       _userId = null;
+      _username = null;
       if (e is AuthException) {
         rethrow;
       }
@@ -58,6 +63,7 @@ class AuthProvider with ChangeNotifier {
       await _tokenService.clearTokens();
       _isAuthenticated = false;
       _userId = null;
+      _username = null;
       notifyListeners();
       _logger.info('Logout successful');
     } catch (e) {
@@ -77,8 +83,20 @@ class AuthProvider with ChangeNotifier {
   }) async {
     try {
       _logger.info('Attempting signup for user: $username');
-      await _authService.signup(username, password, email);
+      final signupResponse = await _authService.signup(username, password, email);
       _logger.info('Signup successful for user: $username');
+
+      // Automatically log in after successful signup
+      await _tokenService.storeTokens(
+        accessToken: signupResponse['accessToken'],
+        refreshToken: signupResponse['refreshToken'],
+      );
+
+      _isAuthenticated = true;
+      _userId = signupResponse['userId'];
+      _username = username;
+      _logger.info('Auto-login successful after signup - User ID: $_userId');
+      notifyListeners();
     } catch (e) {
       _logger.error('Signup failed', e);
       throw AuthException(

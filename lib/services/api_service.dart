@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import 'package:flutter/foundation.dart';
+import '../services/token_service.dart';
 
 class ApiService {
   late final Dio _dio;
+  final TokenService _tokenService = TokenService();
   static final ApiService _instance = ApiService._internal();
 
   factory ApiService() {
@@ -14,8 +16,8 @@ class ApiService {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 3),
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 10),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -29,13 +31,27 @@ class ApiService {
       ),
     );
 
+    // Add auth interceptor
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // Get the access token
+          final token = await _tokenService.getAccessToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+
     // Add logging interceptor
     if (kDebugMode) {
-      _dio.interceptors.clear(); // Clear any existing interceptors
       _dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (options, handler) {
             debugPrint('🌐 Request: ${options.method} ${options.uri}');
+            debugPrint('🔑 Headers: ${options.headers}');
             return handler.next(options);
           },
           onResponse: (response, handler) {
@@ -132,6 +148,10 @@ class ApiService {
     }
   }
 
+  void setHeaders(Map<String, String> headers) {
+    _dio.options.headers = headers;
+  }
+
   // Error handling
   Exception _handleError(DioException error) {
     if (error.response != null) {
@@ -150,53 +170,43 @@ class ApiService {
             message: data?['message'] ?? 'Authentication required',
             code: 'unauthorized'
           );
-        
         case 403:
           return AuthException(
-            message: data?['message'] ?? 'Access denied',
-            code: 'unauthorized'
+            message: data?['message'] ?? 'You do not have permission to access this resource',
+            code: 'forbidden'
           );
-          
         case 404:
-          if (data?['code'] == 'user_not_found') {
-            return AuthException(
-              message: 'User account not found',
-              code: 'user_not_found'
-            );
-          }
           return AuthException(
             message: data?['message'] ?? 'Resource not found',
             code: 'not_found'
           );
-          
-        case 400:
-          if (data?['code'] == 'invalid_credentials') {
-            return AuthException(
-              message: 'Invalid username or password',
-              code: 'invalid_credentials'
-            );
-          }
+        default:
           return AuthException(
-            message: data?['message'] ?? 'Invalid request',
-            code: 'bad_request'
+            message: data?['message'] ?? 'An error occurred',
+            code: 'server_error'
           );
       }
     }
 
-    // Network-related errors
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout) {
       return AuthException(
-        message: 'Network connection error',
+        message: 'Connection timed out. Please check your internet connection.',
+        code: 'timeout'
+      );
+    }
+
+    if (error.type == DioExceptionType.connectionError) {
+      return AuthException(
+        message: 'Unable to connect to the server. Please check your internet connection.',
         code: 'network_error'
       );
     }
 
-    // Default error
     return AuthException(
       message: 'An unexpected error occurred',
-      code: 'unknown_error'
+      code: 'unknown'
     );
   }
 }

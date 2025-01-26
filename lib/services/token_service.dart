@@ -14,6 +14,16 @@ class TokenService {
   static const _accessTokenKey = 'accessToken';
   static const _refreshTokenKey = 'refreshToken';
 
+  /// Get the current access token
+  Future<String?> getAccessToken() async {
+    try {
+      return await _storage.read(key: _accessTokenKey);
+    } catch (e) {
+      _logger.error('Error reading access token', e);
+      return null;
+    }
+  }
+
   /// Validates the current access token
   Future<bool> isAccessTokenValid() async {
     try {
@@ -61,16 +71,6 @@ class TokenService {
         message: 'Failed to clear authentication tokens',
         code: 'token_clear_failed',
       );
-    }
-  }
-
-  /// Retrieves the current access token
-  Future<String?> getAccessToken() async {
-    try {
-      return await _storage.read(key: _accessTokenKey);
-    } catch (e) {
-      _logger.error('Error reading access token', e);
-      return null;
     }
   }
 
